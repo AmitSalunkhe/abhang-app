@@ -1,5 +1,6 @@
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const APP_SETTINGS_DOC_ID = 'main';
 
@@ -16,10 +17,34 @@ export const appSettingsService = {
                 // Return default settings if document doesn't exist
                 return {
                     id: APP_SETTINGS_DOC_ID,
+                    // App Information
+                    appName: 'अभंगवाणी',
                     version: '1.0.0',
-                    organizationName: 'जननी माता भजन मंडळ मोरावळे',
-                    contact: '',
                     description: 'अभंगवाणी - संत वाणी संग्रह',
+                    appLogoURL: '',
+                    faviconURL: '',
+
+                    // Organization Details
+                    organizationName: 'जननी माता भजन मंडळ मोरावळे',
+                    contactEmail: '',
+                    contactPhone: '',
+                    website: '',
+                    address: '',
+
+                    // Branding
+                    primaryColor: '#f97316', // orange-500
+                    secondaryColor: '#f59e0b', // amber-500
+
+                    // Legal
+                    privacyPolicyURL: '',
+                    termsOfServiceURL: '',
+
+                    // Social Media
+                    facebookURL: '',
+                    instagramURL: '',
+                    youtubeURL: '',
+                    whatsappNumber: '',
+
                     lastUpdated: new Date().toISOString()
                 };
             }
@@ -49,6 +74,19 @@ export const appSettingsService = {
             return updatedSettings;
         } catch (error) {
             console.error('Error updating app settings:', error);
+            throw error;
+        }
+    },
+
+    // Upload image (logo, favicon, etc.)
+    async uploadImage(file, imagePath) {
+        try {
+            const storageRef = ref(storage, `appSettings/${imagePath}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            return downloadURL;
+        } catch (error) {
+            console.error('Error uploading image:', error);
             throw error;
         }
     }
