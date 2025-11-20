@@ -4,15 +4,18 @@ import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaUserCircle, FaSignOutAlt, FaCog, FaShieldAlt, FaChevronRight } from 'react-icons/fa';
+import { FaUserCircle, FaSignOutAlt, FaCog, FaShieldAlt, FaChevronRight, FaInfoCircle } from 'react-icons/fa';
+import { appSettingsService } from '../services/appSettingsService';
 
 export default function Profile() {
     const { currentUser, userRole, isAdmin } = useAuth();
     const navigate = useNavigate();
     const [userData, setUserData] = useState(null);
+    const [appSettings, setAppSettings] = useState(null);
 
     useEffect(() => {
         fetchUserData();
+        fetchAppSettings();
     }, [currentUser]);
 
     const fetchUserData = async () => {
@@ -25,6 +28,15 @@ export default function Profile() {
             } catch (error) {
                 console.error("Error fetching user data:", error);
             }
+        }
+    };
+
+    const fetchAppSettings = async () => {
+        try {
+            const settings = await appSettingsService.getAppSettings();
+            setAppSettings(settings);
+        } catch (error) {
+            console.error("Error fetching app settings:", error);
         }
     };
 
@@ -82,13 +94,16 @@ export default function Profile() {
                 )}
 
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-50 overflow-hidden">
-                    <button className="w-full flex items-center p-5 hover:bg-gray-50 transition border-b border-gray-50 text-left group">
+                    <Link
+                        to="/settings"
+                        className="w-full flex items-center p-5 hover:bg-gray-50 transition border-b border-gray-50 text-left group"
+                    >
                         <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center mr-4 group-hover:bg-white transition-colors">
                             <FaCog className="text-gray-400 text-lg" />
                         </div>
                         <span className="text-gray-700 font-medium flex-1">सेटिंग्ज</span>
                         <FaChevronRight className="text-gray-300 text-sm" />
-                    </button>
+                    </Link>
 
                     <button
                         onClick={handleLogout}
@@ -102,9 +117,49 @@ export default function Profile() {
                 </div>
             </div>
 
-            <div className="mt-12 text-center text-gray-400 text-xs">
-                <p className="font-medium mb-1">अभंगवाणी</p>
-                <p>आवृत्ती 1.0.0</p>
+            {/* About App Section */}
+            <div className="mt-8 max-w-md mx-auto">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-50 p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                            <FaInfoCircle className="text-blue-600" />
+                        </div>
+                        <h2 className="text-lg font-mukta font-semibold text-gray-800">अॅप बद्दल</h2>
+                    </div>
+
+                    {appSettings ? (
+                        <div className="space-y-3 text-sm">
+                            <div>
+                                <p className="text-gray-500 mb-1">अॅप नाव</p>
+                                <p className="text-gray-800 font-medium font-mukta">अभंगवाणी</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 mb-1">आवृत्ती</p>
+                                <p className="text-gray-800 font-medium">{appSettings.version}</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 mb-1">संस्था</p>
+                                <p className="text-gray-800 font-medium font-mukta">{appSettings.organizationName}</p>
+                            </div>
+                            {appSettings.contact && (
+                                <div>
+                                    <p className="text-gray-500 mb-1">संपर्क</p>
+                                    <p className="text-gray-800 font-medium">{appSettings.contact}</p>
+                                </div>
+                            )}
+                            {appSettings.description && (
+                                <div>
+                                    <p className="text-gray-500 mb-1">वर्णन</p>
+                                    <p className="text-gray-800 font-mukta">{appSettings.description}</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-center py-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

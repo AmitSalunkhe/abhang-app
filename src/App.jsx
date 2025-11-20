@@ -11,6 +11,7 @@ import Categories from './pages/Categories';
 import CategoryDetail from './pages/CategoryDetail';
 import Favorites from './pages/Favorites';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AbhangForm from './pages/admin/AbhangForm';
@@ -78,6 +79,7 @@ export default function App() {
                         <Route path="category/:slug" element={<CategoryDetail />} />
                         <Route path="favorites" element={<Favorites />} />
                         <Route path="profile" element={<Profile />} />
+                        <Route path="settings" element={<Settings />} />
                     </Route>
 
                     <Route path="/admin" element={
