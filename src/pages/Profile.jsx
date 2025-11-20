@@ -15,7 +15,14 @@ export default function Profile() {
 
     useEffect(() => {
         fetchUserData();
-        fetchAppSettings();
+
+        // Subscribe to app settings
+        const unsubscribe = appSettingsService.subscribeToAppSettings((settings) => {
+            setAppSettings(settings);
+            setLoadingSettings(false);
+        });
+
+        return () => unsubscribe();
     }, [currentUser]);
 
     const fetchUserData = async () => {
@@ -28,18 +35,6 @@ export default function Profile() {
             } catch (error) {
                 console.error("Error fetching user data:", error);
             }
-        }
-    };
-
-    const fetchAppSettings = async () => {
-        try {
-            const settings = await appSettingsService.getAppSettings();
-            setAppSettings(settings);
-        } catch (error) {
-            console.error("Error fetching app settings:", error);
-            // Set default empty settings or handle error
-        } finally {
-            setLoadingSettings(false);
         }
     };
 

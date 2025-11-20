@@ -21,17 +21,14 @@ export default function Settings() {
         if (currentUser) {
             setDisplayName(currentUser.displayName || '');
         }
-        loadAppSettings();
-    }, [currentUser]);
 
-    const loadAppSettings = async () => {
-        try {
-            const settings = await appSettingsService.getAppSettings();
+        // Subscribe to app settings
+        const unsubscribe = appSettingsService.subscribeToAppSettings((settings) => {
             setAppSettings(settings);
-        } catch (error) {
-            console.error('Error loading app settings:', error);
-        }
-    };
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
 
     const handleSaveUserSettings = async () => {
         if (!displayName.trim()) {
@@ -511,7 +508,6 @@ export default function Settings() {
                                     <button
                                         onClick={() => {
                                             setEditingAppInfo(false);
-                                            loadAppSettings();
                                         }}
                                         disabled={loading || uploadingImage}
                                         className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"

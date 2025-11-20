@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { abhangService } from '../services/abhangService';
 import { FaHeart, FaChevronRight, FaSadTear } from 'react-icons/fa';
@@ -14,28 +14,32 @@ export default function Favorites() {
     const [searchQuery, setSearchQuery] = useState({ original: '', marathi: '' });
 
     useEffect(() => {
-        if (currentUser) {
-            fetchFavorites();
-        }
-    }, [currentUser]);
+        if (!currentUser) return;
 
-    const fetchFavorites = async () => {
-        try {
-            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-            if (userDoc.exists()) {
-                const favoriteIds = userDoc.data().favorites || [];
+        const userRef = doc(db, "users", currentUser.uid);
+        const unsubscribe = onSnapshot(userRef, async (docSnap) => {
+            if (docSnap.exists()) {
+                const favoriteIds = docSnap.data().favorites || [];
                 if (favoriteIds.length > 0) {
-                    const promises = favoriteIds.map(id => abhangService.getById(id));
-                    const results = await Promise.all(promises);
-                    setFavorites(results);
+                    try {
+                        const promises = favoriteIds.map(id => abhangService.getById(id));
+                        const results = await Promise.all(promises);
+                        setFavorites(results.filter(item => item !== null)); // Filter out any nulls if abhangs were deleted
+                    } catch (error) {
+                        console.error("Error fetching favorite abhangs:", error);
+                    }
+                } else {
+                    setFavorites([]);
                 }
             }
-        } catch (error) {
-            console.error("Error fetching favorites:", error);
-        } finally {
             setLoading(false);
-        }
-    };
+        }, (error) => {
+            console.error("Error listening to favorites:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
 
     const handleSearch = (original, marathi) => {
         setSearchQuery({ original: original.toLowerCase(), marathi: marathi.toLowerCase() });
