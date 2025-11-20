@@ -5,7 +5,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { appSettingsService } from '../services/appSettingsService';
 import toast from 'react-hot-toast';
-import { FaArrowLeft, FaSave, FaUser, FaTextHeight, FaInfoCircle, FaImage, FaPalette, FaGlobe, FaFacebook, FaInstagram, FaYoutube, FaWhatsapp } from 'react-icons/fa';
+import { FaArrowLeft, FaSave, FaUser, FaTextHeight, FaInfoCircle, FaImage, FaPalette, FaGlobe, FaFacebook, FaInstagram, FaYoutube, FaWhatsapp, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -85,6 +85,16 @@ export default function Settings() {
         }
     };
 
+    const [expandedSection, setExpandedSection] = useState('appInfo'); // appInfo, organization, branding, social, legal
+
+    const toggleSection = (section) => {
+        if (expandedSection === section) {
+            setExpandedSection(null);
+        } else {
+            setExpandedSection(section);
+        }
+    };
+
     const handleSaveAppSettings = async () => {
         if (userRole !== 'admin') {
             toast.error('फक्त अॅडमिनसाठी');
@@ -98,11 +108,32 @@ export default function Settings() {
             setEditingAppInfo(false);
         } catch (error) {
             console.error('Error saving app settings:', error);
-            toast.error('ॲप माहिती अपडेट करताना त्रुटी');
+            let errorMessage = 'ॲप माहिती अपडेट करताना त्रुटी';
+            if (error.code === 'permission-denied') {
+                errorMessage = 'तुम्हाला हे बदल करण्याचा अधिकार नाही (Permission Denied)';
+            }
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
     };
+
+    const SectionHeader = ({ title, icon: Icon, sectionId, color }) => (
+        <button
+            onClick={() => toggleSection(sectionId)}
+            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl mb-4"
+        >
+            <div className="flex items-center gap-3">
+                <Icon className={`text-${color}-500 text-lg`} />
+                <span className="font-semibold text-gray-700">{title}</span>
+            </div>
+            {expandedSection === sectionId ? (
+                <FaChevronUp className="text-gray-400" />
+            ) : (
+                <FaChevronDown className="text-gray-400" />
+            )}
+        </button>
+    );
 
     return (
         <div className="min-h-screen bg-paper pb-20">
@@ -190,313 +221,305 @@ export default function Settings() {
                             )}
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-2">
                             {/* App Information Section */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <FaInfoCircle className="text-blue-500" />
-                                    ॲप माहिती
-                                </h3>
+                            <div>
+                                <SectionHeader title="ॲप माहिती" icon={FaInfoCircle} sectionId="appInfo" color="blue" />
+                                {expandedSection === 'appInfo' && (
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">ॲप नाव</label>
+                                            <input
+                                                type="text"
+                                                value={appSettings.appName || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, appName: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">ॲप नाव</label>
-                                    <input
-                                        type="text"
-                                        value={appSettings.appName || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, appName: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">आवृत्ती</label>
+                                            <input
+                                                type="text"
+                                                value={appSettings.version || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, version: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">आवृत्ती</label>
-                                    <input
-                                        type="text"
-                                        value={appSettings.version || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, version: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">वर्णन</label>
+                                            <textarea
+                                                value={appSettings.description || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, description: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                rows="2"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">वर्णन</label>
-                                    <textarea
-                                        value={appSettings.description || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, description: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        rows="2"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        {/* App Logo */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaImage className="inline mr-2" />
+                                                ॲप लोगो
+                                            </label>
+                                            {appSettings.appLogoURL && (
+                                                <img src={appSettings.appLogoURL} alt="App Logo" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                                            )}
+                                            {editingAppInfo && (
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleImageUpload(e, 'logo')}
+                                                    disabled={uploadingImage}
+                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                                                />
+                                            )}
+                                        </div>
 
-                                {/* App Logo */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaImage className="inline mr-2" />
-                                        ॲप लोगो
-                                    </label>
-                                    {appSettings.appLogoURL && (
-                                        <img src={appSettings.appLogoURL} alt="App Logo" className="w-20 h-20 object-cover rounded-lg mb-2" />
-                                    )}
-                                    {editingAppInfo && (
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => handleImageUpload(e, 'logo')}
-                                            disabled={uploadingImage}
-                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                                        />
-                                    )}
-                                </div>
-
-                                {/* Favicon */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaImage className="inline mr-2" />
-                                        Favicon
-                                    </label>
-                                    {appSettings.faviconURL && (
-                                        <img src={appSettings.faviconURL} alt="Favicon" className="w-10 h-10 object-cover rounded-lg mb-2" />
-                                    )}
-                                    {editingAppInfo && (
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => handleImageUpload(e, 'favicon')}
-                                            disabled={uploadingImage}
-                                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                                        />
-                                    )}
-                                </div>
+                                        {/* Favicon */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaImage className="inline mr-2" />
+                                                Favicon
+                                            </label>
+                                            {appSettings.faviconURL && (
+                                                <img src={appSettings.faviconURL} alt="Favicon" className="w-10 h-10 object-cover rounded-lg mb-2" />
+                                            )}
+                                            {editingAppInfo && (
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleImageUpload(e, 'favicon')}
+                                                    disabled={uploadingImage}
+                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-
-                            <hr className="border-gray-200" />
 
                             {/* Organization Details */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <FaInfoCircle className="text-blue-500" />
-                                    संस्था माहिती
-                                </h3>
+                            <div>
+                                <SectionHeader title="संस्था माहिती" icon={FaInfoCircle} sectionId="organization" color="blue" />
+                                {expandedSection === 'organization' && (
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">संस्थेचे नाव</label>
+                                            <input
+                                                type="text"
+                                                value={appSettings.organizationName || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, organizationName: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">संस्थेचे नाव</label>
-                                    <input
-                                        type="text"
-                                        value={appSettings.organizationName || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, organizationName: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">संपर्क ईमेल</label>
+                                            <input
+                                                type="email"
+                                                value={appSettings.contactEmail || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, contactEmail: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">संपर्क ईमेल</label>
-                                    <input
-                                        type="email"
-                                        value={appSettings.contactEmail || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, contactEmail: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">संपर्क फोन</label>
+                                            <input
+                                                type="tel"
+                                                value={appSettings.contactPhone || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, contactPhone: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">संपर्क फोन</label>
-                                    <input
-                                        type="tel"
-                                        value={appSettings.contactPhone || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, contactPhone: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaGlobe className="inline mr-2" />
+                                                वेबसाइट
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={appSettings.website || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, website: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaGlobe className="inline mr-2" />
-                                        वेबसाइट
-                                    </label>
-                                    <input
-                                        type="url"
-                                        value={appSettings.website || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, website: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">पत्ता</label>
-                                    <textarea
-                                        value={appSettings.address || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, address: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        rows="2"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">पत्ता</label>
+                                            <textarea
+                                                value={appSettings.address || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, address: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                rows="2"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-
-                            <hr className="border-gray-200" />
 
                             {/* Branding */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <FaPalette className="text-purple-500" />
-                                    ब्रँडिंग
-                                </h3>
+                            <div>
+                                <SectionHeader title="ब्रँडिंग" icon={FaPalette} sectionId="branding" color="purple" />
+                                {expandedSection === 'branding' && (
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">मुख्य रंग</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="color"
+                                                    value={appSettings.primaryColor || '#f97316'}
+                                                    onChange={(e) => setAppSettings({ ...appSettings, primaryColor: e.target.value })}
+                                                    disabled={!editingAppInfo}
+                                                    className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={appSettings.primaryColor || ''}
+                                                    onChange={(e) => setAppSettings({ ...appSettings, primaryColor: e.target.value })}
+                                                    disabled={!editingAppInfo}
+                                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                />
+                                            </div>
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">मुख्य रंग</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="color"
-                                            value={appSettings.primaryColor || '#f97316'}
-                                            onChange={(e) => setAppSettings({ ...appSettings, primaryColor: e.target.value })}
-                                            disabled={!editingAppInfo}
-                                            className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={appSettings.primaryColor || ''}
-                                            onChange={(e) => setAppSettings({ ...appSettings, primaryColor: e.target.value })}
-                                            disabled={!editingAppInfo}
-                                            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                        />
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">दुय्यम रंग</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="color"
+                                                    value={appSettings.secondaryColor || '#f59e0b'}
+                                                    onChange={(e) => setAppSettings({ ...appSettings, secondaryColor: e.target.value })}
+                                                    disabled={!editingAppInfo}
+                                                    className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={appSettings.secondaryColor || ''}
+                                                    onChange={(e) => setAppSettings({ ...appSettings, secondaryColor: e.target.value })}
+                                                    disabled={!editingAppInfo}
+                                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">दुय्यम रंग</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="color"
-                                            value={appSettings.secondaryColor || '#f59e0b'}
-                                            onChange={(e) => setAppSettings({ ...appSettings, secondaryColor: e.target.value })}
-                                            disabled={!editingAppInfo}
-                                            className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={appSettings.secondaryColor || ''}
-                                            onChange={(e) => setAppSettings({ ...appSettings, secondaryColor: e.target.value })}
-                                            disabled={!editingAppInfo}
-                                            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                        />
-                                    </div>
-                                </div>
+                                )}
                             </div>
-
-                            <hr className="border-gray-200" />
 
                             {/* Social Media */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <FaGlobe className="text-green-500" />
-                                    सोशल मीडिया
-                                </h3>
+                            <div>
+                                <SectionHeader title="सोशल मीडिया" icon={FaGlobe} sectionId="social" color="green" />
+                                {expandedSection === 'social' && (
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaFacebook className="inline mr-2 text-blue-600" />
+                                                Facebook URL
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={appSettings.facebookURL || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, facebookURL: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                placeholder="https://facebook.com/..."
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaFacebook className="inline mr-2 text-blue-600" />
-                                        Facebook URL
-                                    </label>
-                                    <input
-                                        type="url"
-                                        value={appSettings.facebookURL || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, facebookURL: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        placeholder="https://facebook.com/..."
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaInstagram className="inline mr-2 text-pink-600" />
+                                                Instagram URL
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={appSettings.instagramURL || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, instagramURL: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                placeholder="https://instagram.com/..."
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaInstagram className="inline mr-2 text-pink-600" />
-                                        Instagram URL
-                                    </label>
-                                    <input
-                                        type="url"
-                                        value={appSettings.instagramURL || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, instagramURL: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        placeholder="https://instagram.com/..."
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaYoutube className="inline mr-2 text-red-600" />
+                                                YouTube URL
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={appSettings.youtubeURL || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, youtubeURL: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                placeholder="https://youtube.com/..."
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaYoutube className="inline mr-2 text-red-600" />
-                                        YouTube URL
-                                    </label>
-                                    <input
-                                        type="url"
-                                        value={appSettings.youtubeURL || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, youtubeURL: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        placeholder="https://youtube.com/..."
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <FaWhatsapp className="inline mr-2 text-green-600" />
-                                        WhatsApp Number
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        value={appSettings.whatsappNumber || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, whatsappNumber: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        placeholder="+91 XXXXXXXXXX"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                <FaWhatsapp className="inline mr-2 text-green-600" />
+                                                WhatsApp Number
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value={appSettings.whatsappNumber || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, whatsappNumber: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                placeholder="+91 XXXXXXXXXX"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <hr className="border-gray-200" />
-
                             {/* Legal */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <FaInfoCircle className="text-gray-500" />
-                                    कायदेशीर
-                                </h3>
+                            <div>
+                                <SectionHeader title="कायदेशीर" icon={FaInfoCircle} sectionId="legal" color="gray" />
+                                {expandedSection === 'legal' && (
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">गोपनीयता धोरण URL</label>
+                                            <input
+                                                type="url"
+                                                value={appSettings.privacyPolicyURL || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, privacyPolicyURL: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                placeholder="https://..."
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">गोपनीयता धोरण URL</label>
-                                    <input
-                                        type="url"
-                                        value={appSettings.privacyPolicyURL || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, privacyPolicyURL: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        placeholder="https://..."
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">सेवा अटी URL</label>
-                                    <input
-                                        type="url"
-                                        value={appSettings.termsOfServiceURL || ''}
-                                        onChange={(e) => setAppSettings({ ...appSettings, termsOfServiceURL: e.target.value })}
-                                        disabled={!editingAppInfo}
-                                        placeholder="https://..."
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
-                                    />
-                                </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">सेवा अटी URL</label>
+                                            <input
+                                                type="url"
+                                                value={appSettings.termsOfServiceURL || ''}
+                                                onChange={(e) => setAppSettings({ ...appSettings, termsOfServiceURL: e.target.value })}
+                                                disabled={!editingAppInfo}
+                                                placeholder="https://..."
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Save/Cancel Buttons */}
                             {editingAppInfo && (
-                                <div className="flex gap-3 pt-4">
+                                <div className="flex gap-3 pt-4 sticky bottom-0 bg-white p-4 border-t border-gray-100 shadow-lg rounded-t-2xl">
                                     <button
                                         onClick={handleSaveAppSettings}
                                         disabled={loading || uploadingImage}
