@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // App Settings Images (Logo, Favicon): Everyone can read, Authenticated users can write
+    // (Ideally restrict to admin, but requires custom claims or firestore lookup)
+    match /appSettings/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
