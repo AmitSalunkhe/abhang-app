@@ -11,7 +11,7 @@ export default function Profile() {
     const { currentUser, userRole, isAdmin } = useAuth();
     const navigate = useNavigate();
     const [userData, setUserData] = useState(null);
-    const [appSettings, setAppSettings] = useState(null);
+    const [loadingSettings, setLoadingSettings] = useState(true);
 
     useEffect(() => {
         fetchUserData();
@@ -37,6 +37,9 @@ export default function Profile() {
             setAppSettings(settings);
         } catch (error) {
             console.error("Error fetching app settings:", error);
+            // Set default empty settings or handle error
+        } finally {
+            setLoadingSettings(false);
         }
     };
 
@@ -127,11 +130,15 @@ export default function Profile() {
                         <h2 className="text-lg font-mukta font-semibold text-gray-800">ॲप बद्दल</h2>
                     </div>
 
-                    {appSettings ? (
+                    {loadingSettings ? (
+                        <div className="text-center py-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                        </div>
+                    ) : appSettings ? (
                         <div className="space-y-3 text-sm">
                             <div>
                                 <p className="text-gray-500 mb-1">ॲप नाव</p>
-                                <p className="text-gray-800 font-medium font-mukta">अभंगवाणी</p>
+                                <p className="text-gray-800 font-medium font-mukta">{appSettings.appName || 'अभंगवाणी'}</p>
                             </div>
                             <div>
                                 <p className="text-gray-500 mb-1">आवृत्ती</p>
@@ -155,8 +162,8 @@ export default function Profile() {
                             )}
                         </div>
                     ) : (
-                        <div className="text-center py-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                        <div className="text-center py-4 text-gray-500 text-sm">
+                            माहिती उपलब्ध नाही
                         </div>
                     )}
                 </div>
