@@ -140,14 +140,21 @@ export default function Settings() {
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100 sticky top-0 z-10">
                 <div className="max-w-md mx-auto px-4 py-4">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:shadow-md transition-shadow"
-                        >
-                            <FaArrowLeft className="text-orange-600" />
-                        </button>
-                        <h1 className="text-2xl font-mukta font-bold text-gray-800">सेटिंग्ज</h1>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:shadow-md transition-shadow"
+                            >
+                                <FaArrowLeft className="text-orange-600" />
+                            </button>
+                            <h1 className="text-2xl font-mukta font-bold text-gray-800">सेटिंग्ज</h1>
+                        </div>
+                        {/* Debug Info */}
+                        <div className="text-xs text-gray-400 text-right">
+                            <p>{currentUser?.email}</p>
+                            <p>{currentUser?.uid?.slice(0, 6)}...</p>
+                        </div>
                     </div>
                 </div>
             </div>
