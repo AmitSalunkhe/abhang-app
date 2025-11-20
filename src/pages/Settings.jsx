@@ -149,7 +149,7 @@ export default function Settings() {
                                 <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
                                     <FaInfoCircle className="text-blue-600" />
                                 </div>
-                                <h2 className="text-lg font-mukta font-semibold text-gray-800">अॅप माहिती (अॅडमिन)</h2>
+                                <h2 className="text-lg font-mukta font-semibold text-gray-800">ॲप माहिती (ॲडमिन)</h2>
                             </div>
                             {!editingAppInfo && (
                                 <button

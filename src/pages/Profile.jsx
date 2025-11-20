@@ -124,13 +124,13 @@ export default function Profile() {
                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
                             <FaInfoCircle className="text-blue-600" />
                         </div>
-                        <h2 className="text-lg font-mukta font-semibold text-gray-800">अॅप बद्दल</h2>
+                        <h2 className="text-lg font-mukta font-semibold text-gray-800">ॲप बद्दल</h2>
                     </div>
 
                     {appSettings ? (
                         <div className="space-y-3 text-sm">
                             <div>
-                                <p className="text-gray-500 mb-1">अॅप नाव</p>
+                                <p className="text-gray-500 mb-1">ॲप नाव</p>
                                 <p className="text-gray-800 font-medium font-mukta">अभंगवाणी</p>
                             </div>
                             <div>
