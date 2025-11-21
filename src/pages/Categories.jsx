@@ -1,56 +1,121 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaLayerGroup, FaChevronRight } from 'react-icons/fa';
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import GlobalSearch from '../components/GlobalSearch';
+import { CardSkeleton } from '../components/LoadingSkeleton';
+import EmptyState from '../components/EmptyState';
+import ErrorBoundary from '../components/ErrorBoundary';
 
-export default function Categories() {
+// Enhanced category icons/emojis mapping
+const categoryIcons = {
+    'default': '📚',
+    'भक्ति': '🙏',
+    'ज्ञान': '💡',
+    'प्रेम': '❤️',
+    'निर्गुण': '🕉️',
+    'सगुण': '🌺',
+    'विरह': '💔',
+    'आनंद': '😊',
+};
+
+const gradients = [
+    'from-orange-400 to-red-400',
+    'from-purple-400 to-pink-400',
+    'from-blue-400 to-cyan-400',
+    'from-green-400 to-teal-400',
+    'from-yellow-400 to-orange-400',
+    'from-indigo-400 to-purple-400',
+    'from-pink-400 to-rose-400',
+    'from-cyan-400 to-blue-400',
+];
+
+const CategoryCard = ({ category, index }) => {
+    const icon = categoryIcons[category.name] || categoryIcons['default'];
+
+    return (
+        <Link
+            to={`/category/${category.slug}`}
+            className="stagger-item group block"
+            style={{ animationDelay: `${index * 0.05}s` }}
+        >
+            <div className="bg-white rounded-3xl p-6 shadow-card border border-gray-50 hover:shadow-soft hover:-translate-y-1 transition-all duration-300 relative overflow-hidden h-full flex flex-col items-center text-center group">
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                <div className="relative z-10">
+                    {/* Icon */}
+                    <div className="mb-4 relative">
+                        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                            <span className="text-4xl">{icon}</span>
+                        </div>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-bold text-lg text-text-primary font-mukta mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                        {category.name}
+                    </h3>
+
+                    {/* Count badge */}
+                    <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-gray-100 text-text-muted font-outfit group-hover:bg-white transition-colors">
+                        {category.count} Abhangs
+                    </span>
+                </div>
+            </div>
+        </Link>
+    );
+};
+
+function CategoriesContent() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState({ original: '', marathi: '' });
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Realtime listener for categories
-        const unsubscribe = onSnapshot(collection(db, 'categories'), async (snapshot) => {
-            try {
-                const cats = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+        const unsubscribe = onSnapshot(
+            collection(db, 'categories'),
+            async (snapshot) => {
+                try {
+                    const cats = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
 
-                // Get count for each category
-                const categoriesWithCount = await Promise.all(
-                    cats.map(async (cat) => {
-                        try {
-                            if (!cat.slug) return { ...cat, count: 0 };
-                            // Query by both slug and name to handle legacy data
-                            const q = query(
-                                collection(db, 'abhangs'),
-                                where('category', 'in', [cat.slug, cat.name])
-                            );
-                            const abhangSnapshot = await getDocs(q);
-                            return {
-                                ...cat,
-                                count: abhangSnapshot.size
-                            };
-                        } catch (err) {
-                            console.error(`Error fetching count for category ${cat.name}:`, err);
-                            return { ...cat, count: 0 };
-                        }
-                    })
-                );
+                    const categoriesWithCount = await Promise.all(
+                        cats.map(async (cat) => {
+                            try {
+                                if (!cat.slug) return { ...cat, count: 0 };
+                                const q = query(
+                                    collection(db, 'abhangs'),
+                                    where('category', 'in', [cat.slug, cat.name])
+                                );
+                                const abhangSnapshot = await getDocs(q);
+                                return {
+                                    ...cat,
+                                    count: abhangSnapshot.size
+                                };
+                            } catch (err) {
+                                console.error(`Error fetching count for category ${cat.name}:`, err);
+                                return { ...cat, count: 0 };
+                            }
+                        })
+                    );
 
-                setCategories(categoriesWithCount);
-            } catch (error) {
-                console.error("Error processing categories data:", error);
-            } finally {
+                    setCategories(categoriesWithCount);
+                    setError(null);
+                } catch (error) {
+                    console.error("Error processing categories data:", error);
+                    setError(error.message);
+                } finally {
+                    setLoading(false);
+                }
+            },
+            (error) => {
+                console.error('Error fetching categories:', error);
+                setError(error.message);
                 setLoading(false);
             }
-        }, (error) => {
-            console.error('Error fetching categories:', error);
-            setLoading(false);
-        });
+        );
 
         return () => unsubscribe();
     }, []);
@@ -72,54 +137,69 @@ export default function Categories() {
         );
     });
 
-    return (
-        <div className="p-4 pb-24 min-h-screen bg-paper">
-            <header className="mb-6">
-                <h1 className="text-3xl font-bold text-saffron font-mukta mb-2">विभाग</h1>
-                <p className="text-gray-500">संतांच्या श्रेणी</p>
-            </header>
+    if (error) {
+        return (
+            <div className="p-4 pb-24 min-h-screen bg-background">
+                <div className="max-w-md mx-auto mt-20">
+                    <EmptyState
+                        icon="⚠️"
+                        title="Error Loading Data"
+                        description={error}
+                        action={() => window.location.reload()}
+                        actionLabel="Retry"
+                    />
+                </div>
+            </div>
+        );
+    }
 
-            <div className="mb-6">
-                <GlobalSearch
-                    onSearch={handleSearch}
-                    placeholder="श्रेणी शोधा..."
-                />
+    return (
+        <div className="min-h-screen bg-background pb-24">
+            {/* Minimal Header */}
+            <div className="bg-white pt-8 pb-6 px-6 rounded-b-[2.5rem] shadow-soft mb-6">
+                <h1 className="text-3xl font-bold text-text-primary font-outfit mb-1">Categories</h1>
+                <p className="text-text-muted font-outfit">Browse by topics</p>
             </div>
 
-            {loading ? (
-                <div className="flex justify-center py-10">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron"></div>
+            <div className="px-6 -mt-2">
+                {/* Search Bar */}
+                <div className="mb-6 animate-slide-up">
+                    <GlobalSearch
+                        onSearch={handleSearch}
+                        placeholder="Search categories..."
+                    />
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {filteredCategories.length === 0 ? (
-                        <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-50">
-                            <p className="text-gray-500">कोणतीही श्रेणी सापडली नाही</p>
-                        </div>
-                    ) : (
-                        filteredCategories.map((category) => (
-                            <Link
-                                key={category.id}
-                                to={`/category/${category.slug}`}
-                                className="bg-white p-5 rounded-2xl shadow-sm border border-transparent hover:border-orange-100 flex items-center justify-between hover:shadow-md transition duration-200 group"
-                            >
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-saffron text-xl group-hover:scale-110 transition-transform">
-                                        <FaLayerGroup />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-gray-800 font-mukta group-hover:text-saffron transition-colors">{category.name}</h3>
-                                        <p className="text-xs text-gray-500">{category.count} अभंग</p>
-                                    </div>
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-saffron group-hover:text-white transition-all">
-                                    <FaChevronRight className="text-sm" />
-                                </div>
-                            </Link>
-                        ))
-                    )}
-                </div>
-            )}
+
+                {loading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <CardSkeleton count={6} />
+                    </div>
+                ) : (
+                    <>
+                        {filteredCategories.length === 0 ? (
+                            <EmptyState
+                                icon="📚"
+                                title="No categories found"
+                                description="Try different search terms"
+                            />
+                        ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                                {filteredCategories.map((category, index) => (
+                                    <CategoryCard key={category.id} category={category} index={index} />
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
+    );
+}
+
+export default function Categories() {
+    return (
+        <ErrorBoundary>
+            <CategoriesContent />
+        </ErrorBoundary>
     );
 }

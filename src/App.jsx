@@ -14,10 +14,12 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AbhangManagement from './pages/admin/AbhangManagement';
 import AbhangForm from './pages/admin/AbhangForm';
 import UserManagement from './pages/admin/UserManagement';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import SantManagement from './pages/admin/SantManagement';
+import BulkImport from './pages/admin/BulkImport';
 import SplashScreen from './components/SplashScreen';
 
 function ProtectedRoute({ children }) {
@@ -44,6 +46,8 @@ function AdminRoute({ children }) {
     return children;
 }
 
+import ScrollToTop from './components/ScrollToTop';
+
 export default function App() {
     const [showSplash, setShowSplash] = useState(true);
 
@@ -62,6 +66,7 @@ export default function App() {
         <AuthProvider>
             <Toaster position="top-center" />
             <Router>
+                <ScrollToTop />
                 <Routes>
                     <Route path="/login" element={<Login />} />
 
@@ -88,11 +93,13 @@ export default function App() {
                         </AdminRoute>
                     }>
                         <Route index element={<AdminDashboard />} />
+                        <Route path="abhangs" element={<AbhangManagement />} />
                         <Route path="add" element={<AbhangForm />} />
                         <Route path="edit/:id" element={<AbhangForm />} />
                         <Route path="users" element={<UserManagement />} />
                         <Route path="categories" element={<CategoryManagement />} />
                         <Route path="sants" element={<SantManagement />} />
+                        <Route path="bulk-import" element={<BulkImport />} />
                     </Route>
                 </Routes>
             </Router>

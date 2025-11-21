@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { FaArrowLeft, FaChevronRight } from 'react-icons/fa';
+import { FaArrowLeft } from 'react-icons/fa';
 import { santService } from '../services/santService';
+import { ListSkeleton } from '../components/LoadingSkeleton';
+import EmptyState from '../components/EmptyState';
+import ErrorBoundary from '../components/ErrorBoundary';
 
-export default function CategoryDetail() {
+function CategoryDetailContent() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const [category, setCategory] = useState(null);
@@ -13,9 +16,9 @@ export default function CategoryDetail() {
     const [loading, setLoading] = useState(true);
     const [sants, setSants] = useState([]);
     const [selectedSant, setSelectedSant] = useState('all');
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Fetch category details
         const fetchCategory = async () => {
             try {
                 const categorySnapshot = await getDocs(collection(db, 'categories'));
@@ -24,13 +27,16 @@ export default function CategoryDetail() {
                     ...doc.data()
                 }));
                 const currentCategory = categories.find(cat => cat.slug === slug);
+                if (!currentCategory) {
+                    setError('Category not found');
+                }
                 setCategory(currentCategory);
             } catch (error) {
                 console.error("Error fetching category:", error);
+                setError(error.message);
             }
         };
 
-        // Fetch sants for filter
         const fetchSants = async () => {
             try {
                 const santList = await santService.getAll();
@@ -47,8 +53,6 @@ export default function CategoryDetail() {
     useEffect(() => {
         if (!category) return;
 
-        // Realtime listener for abhangs in this category
-        // Query by both slug and name to handle legacy data
         const q = query(
             collection(db, 'abhangs'),
             where('category', 'in', [slug, category.name])
@@ -63,6 +67,7 @@ export default function CategoryDetail() {
             setLoading(false);
         }, (error) => {
             console.error('Error fetching category abhangs:', error);
+            setError(error.message);
             setLoading(false);
         });
 
@@ -74,98 +79,129 @@ export default function CategoryDetail() {
         return abhang.author === selectedSant;
     });
 
-    if (loading) {
+    if (error) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-saffron"></div>
+            <div className="min-h-screen bg-background p-4">
+                <div className="max-w-md mx-auto mt-20">
+                    <EmptyState
+                        icon="⚠️"
+                        title="Error"
+                        description={error}
+                        action={() => navigate('/categories')}
+                        actionLabel="Go Back"
+                    />
+                </div>
             </div>
         );
     }
 
-    if (!category) {
+    if (loading || !category) {
         return (
-            <div className="p-4 pb-24">
-                <div className="text-center py-10">
-                    <p className="text-gray-500">श्रेणी सापडली नाही</p>
-                    <button onClick={() => navigate('/categories')} className="mt-4 text-saffron">
-                        परत जा
-                    </button>
+            <div className="min-h-screen bg-background">
+                <div className="bg-white pb-6 pt-6 px-6 shadow-soft mb-6">
+                    <div className="h-8 bg-gray-100 rounded w-3/4 mb-3 animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
+                </div>
+                <div className="px-4">
+                    <ListSkeleton count={5} />
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-4 pb-24 min-h-screen bg-paper">
-            <header className="mb-6">
+        <div className="min-h-screen bg-background pb-24">
+            {/* Header */}
+            <div className="bg-white shadow-soft px-6 pt-8 pb-8 rounded-b-3xl mb-6">
                 <button
                     onClick={() => navigate('/categories')}
-                    className="mb-4 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600 hover:text-saffron transition-colors"
+                    className="mb-6 flex items-center text-text-muted hover:text-text-primary transition-colors group"
                 >
-                    <FaArrowLeft />
+                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                        <FaArrowLeft className="text-sm" />
+                    </div>
+                    <span className="ml-3 font-medium font-outfit">Back</span>
                 </button>
+                <h1 className="text-3xl font-bold text-text-primary font-mukta mb-2 animate-slide-up">{category.name}</h1>
+                <p className="text-text-muted font-outfit animate-slide-up" style={{ animationDelay: '0.1s' }}>{abhangs.length} Abhangs</p>
+            </div>
 
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-saffron font-mukta mb-1">{category.name}</h1>
-                        <p className="text-gray-500 text-sm">{abhangs.length} अभंग उपलब्ध</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-saffron text-xl">
-                        <span className="font-bold">{category.name.charAt(0)}</span>
-                    </div>
-                </div>
-
+            <div className="px-4">
                 {/* Sant Filter */}
-                <div className="mt-6">
-                    <select
-                        value={selectedSant}
-                        onChange={(e) => setSelectedSant(e.target.value)}
-                        className="w-full p-3 border-none rounded-xl bg-white shadow-sm text-gray-700 focus:ring-2 focus:ring-saffron/50 outline-none"
-                    >
-                        <option value="all">सर्व संत</option>
-                        {sants.map(sant => (
-                            <option key={sant.id} value={sant.name}>{sant.name}</option>
-                        ))}
-                    </select>
-                </div>
-            </header>
+                {sants.length > 0 && (
+                    <div className="mb-6 animate-slide-up">
+                        <label className="block text-sm font-bold text-text-muted uppercase tracking-wider mb-3 font-outfit px-1">Filter by Sant</label>
+                        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                            <button
+                                onClick={() => setSelectedSant('all')}
+                                className={`px-5 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-300 font-outfit ${selectedSant === 'all'
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                                    : 'bg-white text-text-secondary border border-gray-100 hover:border-primary/30 shadow-sm'
+                                    }`}
+                            >
+                                All
+                            </button>
+                            {sants.map(sant => (
+                                <button
+                                    key={sant.id}
+                                    onClick={() => setSelectedSant(sant.name)}
+                                    className={`px-5 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-300 font-outfit ${selectedSant === sant.name
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                                        : 'bg-white text-text-secondary border border-gray-100 hover:border-primary/30 shadow-sm'
+                                        }`}
+                                >
+                                    {sant.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
-            {filteredAbhangs.length === 0 ? (
-                <div className="bg-white rounded-2xl shadow-sm p-8 text-center border border-gray-50">
-                    <p className="text-gray-500 font-medium">या संतांचे अभंग या श्रेणीमध्ये नाहीत</p>
-                    <p className="text-sm text-gray-400 mt-2">No abhangs found</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {filteredAbhangs.map((abhang) => (
-                        <Link
-                            key={abhang.id}
-                            to={`/abhang/${abhang.id}`}
-                            className="block group"
-                        >
-                            <div className="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-orange-100 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-orange-50 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110"></div>
-
-                                <div className="flex justify-between items-start relative z-10">
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <h3 className="font-bold text-lg text-gray-800 font-mukta truncate group-hover:text-saffron transition-colors">
-                                            {abhang.title}
-                                        </h3>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-saffron">
-                                                {abhang.author}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-saffron group-hover:text-white transition-all">
-                                        <FaChevronRight className="text-sm" />
+                {/* Abhangs List */}
+                {filteredAbhangs.length === 0 ? (
+                    <EmptyState
+                        icon="📖"
+                        title="No Abhangs Found"
+                        description="There are no abhangs available in this category."
+                        action={selectedSant !== 'all' ? () => setSelectedSant('all') : null}
+                        actionLabel={selectedSant !== 'all' ? "View All" : null}
+                    />
+                ) : (
+                    <div className="space-y-3">
+                        {filteredAbhangs.map((abhang, index) => (
+                            <Link
+                                key={abhang.id}
+                                to={`/abhang/${abhang.id}`}
+                                className="stagger-item block group"
+                                style={{ animationDelay: `${index * 0.05}s` }}
+                            >
+                                <div className="bg-white rounded-2xl p-5 shadow-card border border-gray-50 hover:shadow-soft hover:border-primary/20 transition-all duration-300">
+                                    <h3 className="font-bold text-lg text-text-primary font-mukta mb-3 group-hover:text-primary transition-colors">
+                                        {abhang.title}
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-gray-50 text-text-secondary border border-gray-100 font-outfit">
+                                            👤 {abhang.author}
+                                        </span>
+                                        <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-secondary/5 text-secondary border border-secondary/10 font-outfit">
+                                            📚 {abhang.category}
+                                        </span>
                                     </div>
                                 </div>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            )}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
+
+export default function CategoryDetail() {
+    return (
+        <ErrorBoundary>
+            <CategoryDetailContent />
+        </ErrorBoundary>
+    );
+}
+

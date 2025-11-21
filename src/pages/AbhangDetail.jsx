@@ -1,157 +1,227 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { abhangService } from '../services/abhangService';
-import { FaArrowLeft, FaHeart, FaRegHeart, FaFont, FaShareAlt } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { FaArrowLeft, FaHeart, FaRegHeart, FaShare, FaTextHeight } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { favoritesService } from '../services/favoritesService';
+import { DetailSkeleton } from '../components/LoadingSkeleton';
+import ErrorBoundary from '../components/ErrorBoundary';
 
-export default function AbhangDetail() {
+function AbhangDetailContent() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [abhang, setAbhang] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [fontSize, setFontSize] = useState(18);
     const [isFavorite, setIsFavorite] = useState(false);
-    const [showFontControls, setShowFontControls] = useState(false);
+    const [fontSize, setFontSize] = useState(18);
+    const [error, setError] = useState(null);
+    const [showFontSlider, setShowFontSlider] = useState(false);
 
     useEffect(() => {
+        const fetchAbhang = async () => {
+            try {
+                const abhangDoc = await getDoc(doc(db, 'abhangs', id));
+                if (abhangDoc.exists()) {
+                    setAbhang({ id: abhangDoc.id, ...abhangDoc.data() });
+                } else {
+                    setError('Abhang not found');
+                }
+            } catch (error) {
+                console.error("Error fetching abhang:", error);
+                setError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchAbhang();
-        checkIfFavorite();
     }, [id]);
 
-    const fetchAbhang = async () => {
-        try {
-            const data = await abhangService.getById(id);
-            setAbhang(data);
-        } catch (error) {
-            console.error("Failed to fetch abhang", error);
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        if (currentUser && id) {
+            checkFavorite();
         }
-    };
+    }, [currentUser, id]);
 
-    const checkIfFavorite = async () => {
-        if (!currentUser) return;
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-            const favorites = userDoc.data().favorites || [];
-            setIsFavorite(favorites.includes(id));
+    useEffect(() => {
+        const saved = localStorage.getItem('abhang-font-size');
+        if (saved) setFontSize(parseInt(saved));
+    }, []);
+
+    const checkFavorite = async () => {
+        try {
+            const favorites = await favoritesService.getUserFavorites(currentUser.uid);
+            setIsFavorite(favorites.some(fav => fav.abhangId === id));
+        } catch (error) {
+            console.error("Error checking favorite:", error);
         }
     };
 
     const toggleFavorite = async () => {
         if (!currentUser) return;
-        const userRef = doc(db, "users", currentUser.uid);
 
         try {
             if (isFavorite) {
-                await updateDoc(userRef, {
-                    favorites: arrayRemove(id)
-                });
+                await favoritesService.removeFavorite(currentUser.uid, id);
                 setIsFavorite(false);
             } else {
-                await updateDoc(userRef, {
-                    favorites: arrayUnion(id)
-                });
+                await favoritesService.addFavorite(currentUser.uid, id);
                 setIsFavorite(true);
             }
         } catch (error) {
-            console.error("Error updating favorites:", error);
+            console.error("Error toggling favorite:", error);
         }
     };
 
-    if (loading) return <div className="p-4 text-center">लोड होत आहे...</div>;
-    if (!abhang) return <div className="p-4 text-center">अभंग सापडला नाही.</div>;
+    const handleShare = async () => {
+        if (navigator.share && abhang) {
+            try {
+                await navigator.share({
+                    title: abhang.title,
+                    text: `${abhang.title} - ${abhang.author}`,
+                    url: window.location.href
+                });
+            } catch (error) {
+                console.error("Error sharing:", error);
+            }
+        }
+    };
+
+    const handleFontSizeChange = (newSize) => {
+        setFontSize(newSize);
+        localStorage.setItem('abhang-font-size', newSize.toString());
+    };
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-card border border-gray-50 p-8 text-center animate-scale-in">
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-4xl">⚠️</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-text-primary font-outfit mb-2">Error</h3>
+                    <p className="text-text-secondary text-sm mb-6">{error}</p>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 font-outfit"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading || !abhang) {
+        return <DetailSkeleton />;
+    }
+
+    const lyricsText = abhang.lyrics || abhang.content || '';
 
     return (
-        <div className="min-h-screen bg-paper flex flex-col relative">
-            {/* Minimal Header */}
-            <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
+        <div className="min-h-screen bg-background pb-24">
+            {/* Header */}
+            <div className="px-6 pt-8 pb-6">
                 <button
                     onClick={() => navigate(-1)}
-                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center text-gray-600 hover:bg-white transition-all"
+                    className="mb-6 flex items-center text-text-muted hover:text-text-primary transition-colors group"
                 >
-                    <FaArrowLeft />
+                    <div className="w-10 h-10 rounded-full bg-white shadow-soft flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <FaArrowLeft className="text-sm" />
+                    </div>
                 </button>
 
+                <h1 className="text-3xl font-bold text-text-primary font-mukta mb-4 leading-tight">
+                    {abhang.title}
+                </h1>
+
+                <div className="flex flex-wrap gap-3 mb-6">
+                    <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+                        👤 {abhang.author}
+                    </span>
+                    <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20">
+                        📚 {abhang.category}
+                    </span>
+                </div>
+
+                {/* Action Buttons */}
                 <div className="flex gap-3">
+                    {currentUser && (
+                        <button
+                            onClick={toggleFavorite}
+                            className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isFavorite
+                                ? 'bg-red-50 text-red-500 border border-red-100 shadow-sm'
+                                : 'bg-white text-text-secondary border border-gray-100 shadow-soft hover:shadow-card'
+                                }`}
+                        >
+                            {isFavorite ? <FaHeart /> : <FaRegHeart />}
+                            <span>{isFavorite ? 'Saved' : 'Save'}</span>
+                        </button>
+                    )}
+                    {navigator.share && (
+                        <button
+                            onClick={handleShare}
+                            className="bg-white text-text-secondary py-3 px-5 rounded-xl border border-gray-100 shadow-soft hover:shadow-card transition-all flex items-center justify-center"
+                        >
+                            <FaShare />
+                        </button>
+                    )}
                     <button
-                        onClick={() => setShowFontControls(!showFontControls)}
-                        className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center text-gray-600 hover:bg-white transition-all"
+                        onClick={() => setShowFontSlider(!showFontSlider)}
+                        className={`py-3 px-5 rounded-xl border transition-all flex items-center justify-center ${showFontSlider
+                            ? 'bg-primary/10 text-primary border-primary/20'
+                            : 'bg-white text-text-secondary border-gray-100 shadow-soft hover:shadow-card'
+                            }`}
                     >
-                        <FaFont />
-                    </button>
-                    <button
-                        className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center text-gray-600 hover:bg-white transition-all"
-                    >
-                        <FaShareAlt />
+                        <FaTextHeight />
                     </button>
                 </div>
             </div>
 
-            {/* Font Controls - Floating Panel */}
-            {showFontControls && (
-                <div className="absolute top-20 right-4 z-20 bg-white rounded-2xl shadow-lg p-4 border border-gray-100 animate-fade-in w-48">
-                    <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wider">Font Size</p>
-                    <div className="flex items-center justify-between bg-gray-50 rounded-lg p-1">
-                        <button
-                            onClick={() => setFontSize(Math.max(14, fontSize - 2))}
-                            className="w-8 h-8 rounded-md flex items-center justify-center text-gray-600 hover:bg-white hover:shadow-sm transition-all"
-                        >
-                            A-
-                        </button>
-                        <span className="text-sm font-bold text-gray-700">{fontSize}</span>
-                        <button
-                            onClick={() => setFontSize(Math.min(32, fontSize + 2))}
-                            className="w-8 h-8 rounded-md flex items-center justify-center text-gray-600 hover:bg-white hover:shadow-sm transition-all"
-                        >
-                            A+
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Content - Scrollable Paper */}
-            <div className="flex-1 overflow-y-auto pt-24 pb-32 px-6">
-                <div className="max-w-lg mx-auto">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-saffron font-mukta mb-3 leading-tight">
-                            {abhang.title}
-                        </h1>
-                        <div className="inline-block px-4 py-1 rounded-full bg-orange-50 text-saffron text-sm font-medium border border-orange-100">
-                            {abhang.author || 'संत तुकाराम'}
+            {/* Lyrics Section */}
+            <div className="px-4">
+                <div className="bg-white rounded-3xl p-6 shadow-card border border-gray-50">
+                    {/* Font Size Slider */}
+                    {showFontSlider && (
+                        <div className="mb-6 pb-6 border-b border-gray-100 animate-fade-in">
+                            <div className="flex justify-between items-center mb-3">
+                                <label className="text-sm font-bold text-text-muted uppercase tracking-wider font-outfit">Font Size</label>
+                                <span className="text-xs font-medium text-text-muted bg-gray-100 px-2 py-1 rounded-md font-outfit">{fontSize}px</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-text-muted font-outfit">A</span>
+                                <input
+                                    type="range"
+                                    min="14"
+                                    max="32"
+                                    value={fontSize}
+                                    onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
+                                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <span className="text-xl text-text-primary font-bold font-outfit">A</span>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div className="relative">
-                        {/* Decorative quotes */}
-                        <span className="absolute -top-4 -left-2 text-6xl text-orange-100 font-serif opacity-50">"</span>
-
-                        <div
-                            className="whitespace-pre-line text-center leading-loose text-gray-800 font-mukta relative z-10"
-                            style={{ fontSize: `${fontSize}px`, lineHeight: '2' }}
-                        >
-                            {abhang.content}
-                        </div>
-
-                        <span className="absolute -bottom-8 -right-2 text-6xl text-orange-100 font-serif opacity-50 transform rotate-180">"</span>
+                    {/* Lyrics Text */}
+                    <div
+                        className="leading-loose font-mukta text-text-primary whitespace-pre-wrap"
+                        style={{ fontSize: `${fontSize}px` }}
+                    >
+                        {lyricsText || 'No lyrics available'}
                     </div>
                 </div>
             </div>
-
-            {/* Floating Action Button for Favorite */}
-            <button
-                onClick={toggleFavorite}
-                className="fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-110 active:scale-95 z-30"
-                style={{
-                    background: isFavorite ? '#FF9933' : 'white',
-                    color: isFavorite ? 'white' : '#FF9933'
-                }}
-            >
-                {isFavorite ? <FaHeart className="text-2xl" /> : <FaRegHeart className="text-2xl" />}
-            </button>
         </div>
+    );
+}
+
+export default function AbhangDetail() {
+    return (
+        <ErrorBoundary>
+            <AbhangDetailContent />
+        </ErrorBoundary>
     );
 }

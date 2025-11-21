@@ -3,10 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { abhangService } from '../../services/abhangService';
 import { categoryService } from '../../services/categoryService';
 import { santService } from '../../services/santService';
-import { FaArrowLeft, FaSave, FaPlus, FaTimes } from 'react-icons/fa';
+import { FaSave, FaPlus, FaTimes, FaLayerGroup, FaUser, FaHeading, FaAlignLeft } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import PageHeader from '../../components/PageHeader';
+import ErrorBoundary from '../../components/ErrorBoundary';
 
-export default function AbhangForm() {
+function AbhangFormContent() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -22,8 +24,8 @@ export default function AbhangForm() {
     const [formData, setFormData] = useState({
         title: '',
         content: '',
-        author: '', // This will now store the Sant's name
-        category: '' // This will store the Category's slug
+        author: '', // This stores the Sant's name
+        category: '' // This stores the Category's slug
     });
 
     useEffect(() => {
@@ -149,155 +151,192 @@ export default function AbhangForm() {
     };
 
     return (
-        <div className="min-h-screen bg-paper p-4 pb-24">
-            <header className="mb-6 flex items-center">
-                <button onClick={() => navigate('/admin')} className="mr-4 text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <FaArrowLeft size={20} />
-                </button>
-                <h1 className="text-2xl font-bold text-gray-800 font-mukta">
-                    {id ? 'अभंग संपादित करा' : 'नवीन अभंग जोडा'}
-                </h1>
-            </header>
+        <div className="min-h-screen bg-background p-6 pb-24">
+            <PageHeader
+                title={id ? 'Edit Abhang' : 'Add New Abhang'}
+                subtitle="Fill in the details below"
+                showBack={true}
+            />
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
-                {/* Category Field */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-mukta">श्रेणी (Category)</label>
-                    {isAddingCategory ? (
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                placeholder="नवीन श्रेणीचे नाव"
-                                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-saffron focus:border-saffron"
-                                autoFocus
-                            />
-                            <button
-                                type="button"
-                                onClick={handleAddCategory}
-                                className="bg-green-600 text-white px-4 rounded-lg hover:bg-green-700"
-                            >
-                                <FaSave />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setIsAddingCategory(false)}
-                                className="bg-gray-500 text-white px-4 rounded-lg hover:bg-gray-600"
-                            >
-                                <FaTimes />
-                            </button>
+            <div className="max-w-4xl mx-auto -mt-4">
+                <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-card p-6 md:p-8 space-y-8 animate-slide-up border border-gray-50">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Category Field */}
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
+                                <FaLayerGroup className="text-secondary" /> Category
+                            </label>
+                            {isAddingCategory ? (
+                                <div className="flex gap-2 animate-fade-in">
+                                    <input
+                                        type="text"
+                                        value={newCategoryName}
+                                        onChange={(e) => setNewCategoryName(e.target.value)}
+                                        placeholder="New Category Name"
+                                        className="flex-1 p-3 border-none bg-gray-50 rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                                        autoFocus
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddCategory}
+                                        className="bg-secondary text-white px-4 rounded-xl hover:bg-secondary/90 transition-colors shadow-md"
+                                    >
+                                        <FaSave />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddingCategory(false)}
+                                        className="bg-gray-100 text-text-secondary px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                                    >
+                                        <FaTimes />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex gap-2 items-center">
+                                    <div className="relative flex-1">
+                                        <select
+                                            name="category"
+                                            value={formData.category}
+                                            onChange={handleChange}
+                                            className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none appearance-none transition-all text-text-primary"
+                                            required
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                                            ▼
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddingCategory(true)}
+                                        className="bg-secondary/10 text-secondary px-4 py-3 rounded-xl hover:bg-secondary/20 transition-all flex items-center gap-2 text-sm font-bold whitespace-nowrap"
+                                    >
+                                        <FaPlus /> <span className="hidden sm:inline">New</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    ) : (
-                        <div className="flex gap-2 items-center">
-                            <select
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-saffron focus:border-saffron bg-white min-w-0"
-                                required
-                            >
-                                <option value="">श्रेणी निवडा</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                                ))}
-                            </select>
-                            <button
-                                type="button"
-                                onClick={() => setIsAddingCategory(true)}
-                                className="bg-saffron text-white px-3 py-3 rounded-lg hover:bg-orange-600 whitespace-nowrap flex items-center gap-1 text-sm font-medium shadow-sm"
-                            >
-                                <FaPlus /> <span className="hidden sm:inline">नवीन</span>
-                            </button>
+
+                        {/* Author (Sant) Field */}
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
+                                <FaUser className="text-secondary" /> Sant / Author
+                            </label>
+                            {isAddingSant ? (
+                                <div className="flex gap-2 animate-fade-in">
+                                    <input
+                                        type="text"
+                                        value={newSantName}
+                                        onChange={(e) => setNewSantName(e.target.value)}
+                                        placeholder="New Sant Name"
+                                        className="flex-1 p-3 border-none bg-gray-50 rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                                        autoFocus
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddSant}
+                                        className="bg-secondary text-white px-4 rounded-xl hover:bg-secondary/90 transition-colors shadow-md"
+                                    >
+                                        <FaSave />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddingSant(false)}
+                                        className="bg-gray-100 text-text-secondary px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                                    >
+                                        <FaTimes />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex gap-2 items-center">
+                                    <div className="relative flex-1">
+                                        <select
+                                            name="author"
+                                            value={formData.author}
+                                            onChange={handleChange}
+                                            className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none appearance-none transition-all text-text-primary"
+                                            required
+                                        >
+                                            <option value="">Select Sant</option>
+                                            {sants.map(sant => (
+                                                <option key={sant.id} value={sant.name}>{sant.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                                            ▼
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddingSant(true)}
+                                        className="bg-secondary/10 text-secondary px-4 py-3 rounded-xl hover:bg-secondary/20 transition-all flex items-center gap-2 text-sm font-bold whitespace-nowrap"
+                                    >
+                                        <FaPlus /> <span className="hidden sm:inline">New</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
 
-                {/* Author (Sant) Field */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-mukta">संत / लेखक (Author)</label>
-                    {isAddingSant ? (
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={newSantName}
-                                onChange={(e) => setNewSantName(e.target.value)}
-                                placeholder="नवीन संतांचे नाव"
-                                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-saffron focus:border-saffron"
-                                autoFocus
-                            />
-                            <button
-                                type="button"
-                                onClick={handleAddSant}
-                                className="bg-green-600 text-white px-4 rounded-lg hover:bg-green-700"
-                            >
-                                <FaSave />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setIsAddingSant(false)}
-                                className="bg-gray-500 text-white px-4 rounded-lg hover:bg-gray-600"
-                            >
-                                <FaTimes />
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex gap-2 items-center">
-                            <select
-                                name="author"
-                                value={formData.author}
-                                onChange={handleChange}
-                                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-saffron focus:border-saffron bg-white min-w-0"
-                                required
-                            >
-                                <option value="">संत निवडा</option>
-                                {sants.map(sant => (
-                                    <option key={sant.id} value={sant.name}>{sant.name}</option>
-                                ))}
-                            </select>
-                            <button
-                                type="button"
-                                onClick={() => setIsAddingSant(true)}
-                                className="bg-saffron text-white px-3 py-3 rounded-lg hover:bg-orange-600 whitespace-nowrap flex items-center gap-1 text-sm font-medium shadow-sm"
-                            >
-                                <FaPlus /> <span className="hidden sm:inline">नवीन</span>
-                            </button>
-                        </div>
-                    )}
-                </div>
+                    {/* Title Field */}
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
+                            <FaHeading className="text-secondary" /> Title
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            placeholder="Abhang Title"
+                            className="w-full p-4 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all font-mukta text-lg text-text-primary placeholder-text-muted"
+                            required
+                        />
+                    </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-mukta">शीर्षक (Title)</label>
-                    <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-saffron focus:border-saffron"
-                        required
-                    />
-                </div>
+                    {/* Content Field */}
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
+                            <FaAlignLeft className="text-secondary" /> Content (Abhang)
+                        </label>
+                        <textarea
+                            name="content"
+                            value={formData.content}
+                            onChange={handleChange}
+                            rows="12"
+                            placeholder="Write abhang lyrics here..."
+                            className="w-full p-4 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all font-mukta text-lg leading-relaxed resize-y text-text-primary placeholder-text-muted"
+                            required
+                        ></textarea>
+                    </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 font-mukta">अभंग (Content)</label>
-                    <textarea
-                        name="content"
-                        value={formData.content}
-                        onChange={handleChange}
-                        rows="10"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-saffron focus:border-saffron font-mukta"
-                        required
-                    ></textarea>
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-saffron text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition duration-200 flex justify-center items-center gap-2 shadow-md"
-                >
-                    {loading ? 'जतन करत आहे...' : <><FaSave /> जतन करा</>}
-                </button>
-            </form>
+                    {/* Submit Button */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex justify-center items-center gap-2 shadow-md shadow-primary/30 disabled:opacity-70 disabled:cursor-not-allowed font-outfit"
+                    >
+                        {loading ? (
+                            <span className="animate-pulse">Saving...</span>
+                        ) : (
+                            <><FaSave /> Save Abhang</>
+                        )}
+                    </button>
+                </form>
+            </div>
         </div>
+    );
+}
+
+export default function AbhangForm() {
+    return (
+        <ErrorBoundary>
+            <AbhangFormContent />
+        </ErrorBoundary>
     );
 }

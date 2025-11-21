@@ -1,40 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { abhangService } from '../services/abhangService';
-import { FaHeart, FaChevronRight, FaSadTear } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { favoritesService } from '../services/favoritesService';
 import GlobalSearch from '../components/GlobalSearch';
+import { ListSkeleton } from '../components/LoadingSkeleton';
+import EmptyState from '../components/EmptyState';
+import ErrorBoundary from '../components/ErrorBoundary';
 
-export default function Favorites() {
+function FavoritesContent() {
     const { currentUser } = useAuth();
     const [favorites, setFavorites] = useState([]);
+    const [abhangs, setAbhangs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState({ original: '', marathi: '' });
 
     useEffect(() => {
-        if (!currentUser) return;
+        if (!currentUser) {
+            setLoading(false);
+            return;
+        }
 
-        const userRef = doc(db, "users", currentUser.uid);
-        const unsubscribe = onSnapshot(userRef, async (docSnap) => {
-            if (docSnap.exists()) {
-                const favoriteIds = docSnap.data().favorites || [];
-                if (favoriteIds.length > 0) {
+        const favoritesQuery = query(
+            collection(db, 'favorites'),
+            where('userId', '==', currentUser.uid)
+        );
+
+        const unsubscribe = onSnapshot(favoritesQuery, async (snapshot) => {
+            const favoritesList = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setFavorites(favoritesList);
+
+            if (favoritesList.length > 0) {
+                const abhangPromises = favoritesList.map(async (fav) => {
                     try {
-                        const promises = favoriteIds.map(id => abhangService.getById(id));
-                        const results = await Promise.all(promises);
-                        setFavorites(results.filter(item => item !== null)); // Filter out any nulls if abhangs were deleted
+                        const abhangQuery = query(
+                            collection(db, 'abhangs'),
+                            where('__name__', '==', fav.abhangId)
+                        );
+                        const abhangSnapshot = await getDocs(abhangQuery);
+                        if (!abhangSnapshot.empty) {
+                            return {
+                                id: abhangSnapshot.docs[0].id,
+                                ...abhangSnapshot.docs[0].data()
+                            };
+                        }
+                        return null;
                     } catch (error) {
-                        console.error("Error fetching favorite abhangs:", error);
+                        console.error('Error fetching abhang:', error);
+                        return null;
                     }
-                } else {
-                    setFavorites([]);
-                }
+                });
+
+                const abhangsList = await Promise.all(abhangPromises);
+                setAbhangs(abhangsList.filter(a => a !== null));
+            } else {
+                setAbhangs([]);
             }
             setLoading(false);
         }, (error) => {
-            console.error("Error listening to favorites:", error);
+            console.error('Error fetching favorites:', error);
             setLoading(false);
         });
 
@@ -45,75 +73,104 @@ export default function Favorites() {
         setSearchQuery({ original: original.toLowerCase(), marathi: marathi.toLowerCase() });
     };
 
-    const filteredFavorites = favorites.filter(abhang => {
+    const filteredAbhangs = abhangs.filter(abhang => {
         const { original, marathi } = searchQuery;
         if (!original) return true;
 
         const title = abhang.title?.toLowerCase() || '';
         const author = abhang.author?.toLowerCase() || '';
-        const content = abhang.content?.toLowerCase() || '';
+        const category = abhang.category?.toLowerCase() || '';
 
         return (
             title.includes(original) || title.includes(marathi) ||
             author.includes(original) || author.includes(marathi) ||
-            content.includes(original) || content.includes(marathi)
+            category.includes(original) || category.includes(marathi)
         );
     });
 
-    return (
-        <div className="p-4 pb-24 min-h-screen bg-paper">
-            <header className="mb-6">
-                <h1 className="text-3xl font-bold text-saffron font-mukta mb-2">आवडते अभंग</h1>
-                <p className="text-gray-500">तुमचे जतन केलेले अभंग</p>
-            </header>
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-red-50/30 via-white to-pink-50/20 pb-24">
+                <div className="max-w-md mx-auto mt-20 px-4">
+                    <EmptyState
+                        icon="❤️"
+                        title="लॉगिन आवश्यक आहे"
+                        description="आवडीचे अभंग पाहण्यासाठी कृपया लॉगिन करा"
+                        gradient="from-red-50 to-transparent"
+                    />
+                </div>
+            </div>
+        );
+    }
 
-            <div className="mb-6">
-                <GlobalSearch
-                    onSearch={handleSearch}
-                    placeholder="आवडते अभंग शोधा..."
-                />
+    return (
+        <div className="min-h-screen bg-background pb-24">
+            {/* Minimal Header */}
+            <div className="bg-white pt-8 pb-6 px-6 rounded-b-[2.5rem] shadow-soft mb-6">
+                <h1 className="text-3xl font-bold text-text-primary font-outfit mb-1">Favorites</h1>
+                <p className="text-text-muted font-outfit">Your collection of saved abhangs</p>
             </div>
 
-            {loading ? (
-                <div className="flex justify-center py-10">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saffron"></div>
+            <div className="px-6 -mt-2">
+                {/* Search Bar */}
+                <div className="mb-6 animate-slide-up">
+                    <GlobalSearch
+                        onSearch={handleSearch}
+                        placeholder="Search favorites..."
+                    />
                 </div>
-            ) : filteredFavorites.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-white rounded-2xl shadow-sm border border-gray-50">
-                    <FaSadTear className="text-5xl mb-4 text-orange-200" />
-                    <p className="font-medium">{favorites.length === 0 ? 'अद्याप कोणतेही आवडते अभंग नाहीत.' : 'कोणतेही अभंग सापडले नाहीत.'}</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {filteredFavorites.map((abhang) => (
-                        <Link
-                            key={abhang.id}
-                            to={`/abhang/${abhang.id}`}
-                            className="block group"
-                        >
-                            <div className="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-orange-100 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-orange-50 rounded-bl-full -mr-8 -mt-8 opacity-50 transition-transform group-hover:scale-110"></div>
 
-                                <div className="flex justify-between items-start relative z-10">
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <FaHeart className="text-saffron text-sm" />
-                                            <span className="text-xs font-medium text-gray-400">Saved</span>
+                {loading ? (
+                    <ListSkeleton count={5} />
+                ) : (
+                    <>
+                        {filteredAbhangs.length === 0 ? (
+                            <EmptyState
+                                icon="❤️"
+                                title={abhangs.length === 0 ? 'No favorites yet' : 'No matches found'}
+                                description={abhangs.length === 0 ? 'Save abhangs you like by tapping the heart icon' : 'Try different search terms'}
+                            />
+                        ) : (
+                            <div className="space-y-4">
+                                {filteredAbhangs.map((abhang, index) => (
+                                    <Link
+                                        key={abhang.id}
+                                        to={`/abhang/${abhang.id}`}
+                                        className="stagger-item block group"
+                                        style={{ animationDelay: `${index * 0.05}s` }}
+                                    >
+                                        <div className="bg-white rounded-2xl p-5 shadow-card border border-gray-50 hover:shadow-soft hover:-translate-y-1 hover:border-primary/20 transition-all duration-300 relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                            <div className="relative z-10">
+                                                <h3 className="font-bold text-lg text-text-primary font-mukta mb-3 group-hover:text-primary transition-colors">
+                                                    {abhang.title}
+                                                </h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-text-secondary font-outfit group-hover:bg-white transition-colors">
+                                                        👤 {abhang.author}
+                                                    </span>
+                                                    <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-text-secondary font-outfit group-hover:bg-white transition-colors">
+                                                        📚 {abhang.category}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <h3 className="font-bold text-lg text-gray-800 font-mukta truncate group-hover:text-saffron transition-colors">
-                                            {abhang.title}
-                                        </h3>
-                                        <p className="text-sm text-gray-500 mt-1">{abhang.author}</p>
-                                    </div>
-                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-saffron group-hover:text-white transition-all">
-                                        <FaChevronRight className="text-sm" />
-                                    </div>
-                                </div>
+                                    </Link>
+                                ))}
                             </div>
-                        </Link>
-                    ))}
-                </div>
-            )}
+                        )}
+                    </>
+                )}
+            </div>
         </div>
+    );
+}
+
+export default function Favorites() {
+    return (
+        <ErrorBoundary>
+            <FavoritesContent />
+        </ErrorBoundary>
     );
 }

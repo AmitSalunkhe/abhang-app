@@ -11,8 +11,8 @@ export default function Layout() {
     }
 
     return (
-        <div className="min-h-screen bg-paper pb-20">
-            <main className="max-w-md mx-auto min-h-screen bg-white shadow-xl overflow-hidden relative">
+        <div className="min-h-screen bg-background pb-24 md:pb-0 md:pl-20">
+            <main className="max-w-7xl mx-auto min-h-screen bg-background relative">
                 <Outlet />
                 <BottomNav />
             </main>

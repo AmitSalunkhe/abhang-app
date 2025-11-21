@@ -32,7 +32,7 @@ export default function Settings() {
 
     const handleSaveUserSettings = async () => {
         if (!displayName.trim()) {
-            toast.error('कृपया नाव प्रविष्ट करा');
+            toast.error('Please enter your name');
             return;
         }
 
@@ -43,10 +43,10 @@ export default function Settings() {
                 displayName: displayName.trim(),
                 fontSize: fontSize
             });
-            toast.success('सेटिंग्ज जतन झाल्या!');
+            toast.success('Settings saved successfully!');
         } catch (error) {
             console.error('Error saving settings:', error);
-            toast.error('सेटिंग्ज जतन करताना त्रुटी');
+            toast.error('Error saving settings');
         } finally {
             setLoading(false);
         }
@@ -58,13 +58,13 @@ export default function Settings() {
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            toast.error('कृपया image file निवडा');
+            toast.error('Please select an image file');
             return;
         }
 
         // Validate file size (max 2MB)
         if (file.size > 2 * 1024 * 1024) {
-            toast.error('Image size 2MB पेक्षा कमी असावी');
+            toast.error('Image size must be less than 2MB');
             return;
         }
 
@@ -76,10 +76,10 @@ export default function Settings() {
             const fieldName = imageType === 'logo' ? 'appLogoURL' : 'faviconURL';
             setAppSettings({ ...appSettings, [fieldName]: downloadURL });
 
-            toast.success('Image upload झाली!');
+            toast.success('Image uploaded successfully!');
         } catch (error) {
             console.error('Error uploading image:', error);
-            toast.error('Image upload करताना त्रुटी');
+            toast.error('Error uploading image');
         } finally {
             setUploadingImage(false);
         }
@@ -97,20 +97,20 @@ export default function Settings() {
 
     const handleSaveAppSettings = async () => {
         if (userRole !== 'admin') {
-            toast.error('फक्त अॅडमिनसाठी');
+            toast.error('Admin access only');
             return;
         }
 
         setLoading(true);
         try {
             await appSettingsService.updateAppSettings(appSettings);
-            toast.success('ॲप माहिती अपडेट झाली!');
+            toast.success('App info updated successfully!');
             setEditingAppInfo(false);
         } catch (error) {
             console.error('Error saving app settings:', error);
-            let errorMessage = 'ॲप माहिती अपडेट करताना त्रुटी';
+            let errorMessage = 'Error updating app info';
             if (error.code === 'permission-denied') {
-                errorMessage = 'तुम्हाला हे बदल करण्याचा अधिकार नाही (Permission Denied)';
+                errorMessage = 'Permission Denied';
             }
             toast.error(errorMessage);
         } finally {
@@ -125,7 +125,7 @@ export default function Settings() {
         >
             <div className="flex items-center gap-3">
                 <Icon className={`text-${color}-500 text-lg`} />
-                <span className="font-semibold text-gray-700">{title}</span>
+                <span className="font-semibold text-gray-700 font-outfit">{title}</span>
             </div>
             {expandedSection === sectionId ? (
                 <FaChevronUp className="text-gray-400" />
@@ -136,22 +136,22 @@ export default function Settings() {
     );
 
     return (
-        <div className="min-h-screen bg-paper pb-20">
+        <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100 sticky top-0 z-10">
+            <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
                 <div className="max-w-md mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => navigate(-1)}
-                                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:shadow-md transition-shadow"
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors"
                             >
-                                <FaArrowLeft className="text-orange-600" />
+                                <FaArrowLeft className="text-text-secondary" />
                             </button>
-                            <h1 className="text-2xl font-mukta font-bold text-gray-800">सेटिंग्ज</h1>
+                            <h1 className="text-2xl font-mukta font-bold text-text-primary">Settings</h1>
                         </div>
                         {/* Debug Info */}
-                        <div className="text-xs text-gray-400 text-right">
+                        <div className="text-xs text-text-muted text-right font-outfit">
                             <p>{currentUser?.email}</p>
                             <p>{currentUser?.uid?.slice(0, 6)}...</p>
                         </div>
@@ -161,69 +161,69 @@ export default function Settings() {
 
             <div className="max-w-md mx-auto px-4 py-6 space-y-6">
                 {/* User Settings */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-50 p-6">
+                <div className="bg-white rounded-3xl shadow-card border border-gray-50 p-6">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
-                            <FaUser className="text-orange-600" />
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FaUser className="text-primary" />
                         </div>
-                        <h2 className="text-lg font-mukta font-semibold text-gray-800">वैयक्तिक माहिती</h2>
+                        <h2 className="text-lg font-mukta font-semibold text-text-primary">Personal Information</h2>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">नाव</label>
+                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Name</label>
                             <input
                                 type="text"
                                 value={displayName}
                                 onChange={(e) => setDisplayName(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                placeholder="तुमचे नाव प्रविष्ट करा"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-outfit"
+                                placeholder="Enter your name"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                 <FaTextHeight className="inline mr-2" />
-                                फॉन्ट आकार
+                                Font Size
                             </label>
                             <select
                                 value={fontSize}
                                 onChange={(e) => setFontSize(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-outfit"
                             >
-                                <option value="small">लहान</option>
-                                <option value="medium">मध्यम</option>
-                                <option value="large">मोठा</option>
+                                <option value="small">Small</option>
+                                <option value="medium">Medium</option>
+                                <option value="large">Large</option>
                             </select>
                         </div>
 
                         <button
                             onClick={handleSaveUserSettings}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3 rounded-xl font-medium hover:shadow-md transition-shadow disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full bg-primary text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2 font-outfit"
                         >
                             <FaSave />
-                            {loading ? 'जतन होत आहे...' : 'जतन करा'}
+                            {loading ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 </div>
 
                 {/* Admin: Edit App Info */}
                 {userRole === 'admin' && appSettings && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-50 p-6">
+                    <div className="bg-white rounded-3xl shadow-card border border-gray-50 p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                                    <FaInfoCircle className="text-blue-600" />
+                                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                                    <FaInfoCircle className="text-secondary" />
                                 </div>
-                                <h2 className="text-lg font-mukta font-semibold text-gray-800">ॲप माहिती (ॲडमिन)</h2>
+                                <h2 className="text-lg font-mukta font-semibold text-text-primary">App Info (Admin)</h2>
                             </div>
                             {!editingAppInfo && (
                                 <button
                                     onClick={() => setEditingAppInfo(true)}
-                                    className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                                    className="text-sm text-primary hover:text-primary-dark font-medium font-outfit"
                                 >
-                                    संपादित करा
+                                    Edit
                                 </button>
                             )}
                         </div>
@@ -231,50 +231,50 @@ export default function Settings() {
                         <div className="space-y-2">
                             {/* App Information Section */}
                             <div>
-                                <SectionHeader title="ॲप माहिती" icon={FaInfoCircle} sectionId="appInfo" color="blue" />
+                                <SectionHeader title="App Information" icon={FaInfoCircle} sectionId="appInfo" color="blue" />
                                 {expandedSection === 'appInfo' && (
-                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fade-in">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">ॲप नाव</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">App Name</label>
                                             <input
                                                 type="text"
                                                 value={appSettings.appName || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, appName: e.target.value })}
                                                 disabled={!editingAppInfo}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">आवृत्ती</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Version</label>
                                             <input
                                                 type="text"
                                                 value={appSettings.version || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, version: e.target.value })}
                                                 disabled={!editingAppInfo}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">वर्णन</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Description</label>
                                             <textarea
                                                 value={appSettings.description || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, description: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 rows="2"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         {/* App Logo */}
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaImage className="inline mr-2" />
-                                                ॲप लोगो
+                                                App Logo
                                             </label>
                                             {appSettings.appLogoURL && (
-                                                <img src={appSettings.appLogoURL} alt="App Logo" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                                                <img src={appSettings.appLogoURL} alt="App Logo" className="w-20 h-20 object-cover rounded-lg mb-2 shadow-sm" />
                                             )}
                                             {editingAppInfo && (
                                                 <input
@@ -282,19 +282,19 @@ export default function Settings() {
                                                     accept="image/*"
                                                     onChange={(e) => handleImageUpload(e, 'logo')}
                                                     disabled={uploadingImage}
-                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 font-outfit"
                                                 />
                                             )}
                                         </div>
 
                                         {/* Favicon */}
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaImage className="inline mr-2" />
                                                 Favicon
                                             </label>
                                             {appSettings.faviconURL && (
-                                                <img src={appSettings.faviconURL} alt="Favicon" className="w-10 h-10 object-cover rounded-lg mb-2" />
+                                                <img src={appSettings.faviconURL} alt="Favicon" className="w-10 h-10 object-cover rounded-lg mb-2 shadow-sm" />
                                             )}
                                             {editingAppInfo && (
                                                 <input
@@ -302,7 +302,7 @@ export default function Settings() {
                                                     accept="image/*"
                                                     onChange={(e) => handleImageUpload(e, 'favicon')}
                                                     disabled={uploadingImage}
-                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 font-outfit"
                                                 />
                                             )}
                                         </div>
@@ -312,64 +312,64 @@ export default function Settings() {
 
                             {/* Organization Details */}
                             <div>
-                                <SectionHeader title="संस्था माहिती" icon={FaInfoCircle} sectionId="organization" color="blue" />
+                                <SectionHeader title="Organization Info" icon={FaInfoCircle} sectionId="organization" color="blue" />
                                 {expandedSection === 'organization' && (
-                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fade-in">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">संस्थेचे नाव</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Organization Name</label>
                                             <input
                                                 type="text"
                                                 value={appSettings.organizationName || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, organizationName: e.target.value })}
                                                 disabled={!editingAppInfo}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">संपर्क ईमेल</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Contact Email</label>
                                             <input
                                                 type="email"
                                                 value={appSettings.contactEmail || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, contactEmail: e.target.value })}
                                                 disabled={!editingAppInfo}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">संपर्क फोन</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Contact Phone</label>
                                             <input
                                                 type="tel"
                                                 value={appSettings.contactPhone || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, contactPhone: e.target.value })}
                                                 disabled={!editingAppInfo}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaGlobe className="inline mr-2" />
-                                                वेबसाइट
+                                                Website
                                             </label>
                                             <input
                                                 type="url"
                                                 value={appSettings.website || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, website: e.target.value })}
                                                 disabled={!editingAppInfo}
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">पत्ता</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Address</label>
                                             <textarea
                                                 value={appSettings.address || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, address: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 rows="2"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
                                     </div>
@@ -378,45 +378,45 @@ export default function Settings() {
 
                             {/* Branding */}
                             <div>
-                                <SectionHeader title="ब्रँडिंग" icon={FaPalette} sectionId="branding" color="purple" />
+                                <SectionHeader title="Branding" icon={FaPalette} sectionId="branding" color="purple" />
                                 {expandedSection === 'branding' && (
-                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fade-in">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">मुख्य रंग</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Primary Color</label>
                                             <div className="flex gap-2">
                                                 <input
                                                     type="color"
                                                     value={appSettings.primaryColor || '#f97316'}
                                                     onChange={(e) => setAppSettings({ ...appSettings, primaryColor: e.target.value })}
                                                     disabled={!editingAppInfo}
-                                                    className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50"
+                                                    className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50 cursor-pointer"
                                                 />
                                                 <input
                                                     type="text"
                                                     value={appSettings.primaryColor || ''}
                                                     onChange={(e) => setAppSettings({ ...appSettings, primaryColor: e.target.value })}
                                                     disabled={!editingAppInfo}
-                                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">दुय्यम रंग</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Secondary Color</label>
                                             <div className="flex gap-2">
                                                 <input
                                                     type="color"
                                                     value={appSettings.secondaryColor || '#f59e0b'}
                                                     onChange={(e) => setAppSettings({ ...appSettings, secondaryColor: e.target.value })}
                                                     disabled={!editingAppInfo}
-                                                    className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50"
+                                                    className="h-12 w-20 rounded-lg border border-gray-200 disabled:opacity-50 cursor-pointer"
                                                 />
                                                 <input
                                                     type="text"
                                                     value={appSettings.secondaryColor || ''}
                                                     onChange={(e) => setAppSettings({ ...appSettings, secondaryColor: e.target.value })}
                                                     disabled={!editingAppInfo}
-                                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                    className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                                 />
                                             </div>
                                         </div>
@@ -426,11 +426,11 @@ export default function Settings() {
 
                             {/* Social Media */}
                             <div>
-                                <SectionHeader title="सोशल मीडिया" icon={FaGlobe} sectionId="social" color="green" />
+                                <SectionHeader title="Social Media" icon={FaGlobe} sectionId="social" color="green" />
                                 {expandedSection === 'social' && (
-                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fade-in">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaFacebook className="inline mr-2 text-blue-600" />
                                                 Facebook URL
                                             </label>
@@ -440,12 +440,12 @@ export default function Settings() {
                                                 onChange={(e) => setAppSettings({ ...appSettings, facebookURL: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 placeholder="https://facebook.com/..."
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaInstagram className="inline mr-2 text-pink-600" />
                                                 Instagram URL
                                             </label>
@@ -455,12 +455,12 @@ export default function Settings() {
                                                 onChange={(e) => setAppSettings({ ...appSettings, instagramURL: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 placeholder="https://instagram.com/..."
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaYoutube className="inline mr-2 text-red-600" />
                                                 YouTube URL
                                             </label>
@@ -470,12 +470,12 @@ export default function Settings() {
                                                 onChange={(e) => setAppSettings({ ...appSettings, youtubeURL: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 placeholder="https://youtube.com/..."
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">
                                                 <FaWhatsapp className="inline mr-2 text-green-600" />
                                                 WhatsApp Number
                                             </label>
@@ -485,7 +485,7 @@ export default function Settings() {
                                                 onChange={(e) => setAppSettings({ ...appSettings, whatsappNumber: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 placeholder="+91 XXXXXXXXXX"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
                                     </div>
@@ -494,30 +494,30 @@ export default function Settings() {
 
                             {/* Legal */}
                             <div>
-                                <SectionHeader title="कायदेशीर" icon={FaInfoCircle} sectionId="legal" color="gray" />
+                                <SectionHeader title="Legal" icon={FaInfoCircle} sectionId="legal" color="gray" />
                                 {expandedSection === 'legal' && (
-                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fadeIn">
+                                    <div className="space-y-4 p-4 border border-gray-100 rounded-xl mb-4 animate-fade-in">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">गोपनीयता धोरण URL</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Privacy Policy URL</label>
                                             <input
                                                 type="url"
                                                 value={appSettings.privacyPolicyURL || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, privacyPolicyURL: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 placeholder="https://..."
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">सेवा अटी URL</label>
+                                            <label className="block text-sm font-medium text-text-secondary mb-2 font-outfit">Terms of Service URL</label>
                                             <input
                                                 type="url"
                                                 value={appSettings.termsOfServiceURL || ''}
                                                 onChange={(e) => setAppSettings({ ...appSettings, termsOfServiceURL: e.target.value })}
                                                 disabled={!editingAppInfo}
                                                 placeholder="https://..."
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-gray-50 font-outfit"
                                             />
                                         </div>
                                     </div>
@@ -530,19 +530,19 @@ export default function Settings() {
                                     <button
                                         onClick={handleSaveAppSettings}
                                         disabled={loading || uploadingImage}
-                                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:shadow-md transition-shadow disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 bg-primary text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2 font-outfit"
                                     >
                                         <FaSave />
-                                        {loading ? 'जतन होत आहे...' : 'जतन करा'}
+                                        {loading ? 'Saving...' : 'Save Changes'}
                                     </button>
                                     <button
                                         onClick={() => {
                                             setEditingAppInfo(false);
                                         }}
                                         disabled={loading || uploadingImage}
-                                        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                        className="px-6 py-3 border border-gray-300 text-text-secondary rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 font-outfit"
                                     >
-                                        रद्द करा
+                                        Cancel
                                     </button>
                                 </div>
                             )}
@@ -553,3 +553,4 @@ export default function Settings() {
         </div>
     );
 }
+
