@@ -8,6 +8,8 @@ import toast from 'react-hot-toast';
 import PageHeader from '../../components/PageHeader';
 import ErrorBoundary from '../../components/ErrorBoundary';
 
+import CustomSelect from '../../components/CustomSelect';
+
 function AbhangFormContent() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -150,6 +152,10 @@ function AbhangFormContent() {
         }
     };
 
+    // Prepare options for CustomSelect
+    const categoryOptions = categories.map(cat => ({ value: cat.slug, label: cat.name }));
+    const santOptions = sants.map(sant => ({ value: sant.name, label: sant.name }));
+
     return (
         <div className="min-h-screen bg-background p-6 pb-24">
             <PageHeader
@@ -164,57 +170,58 @@ function AbhangFormContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Category Field */}
                         <div className="space-y-3">
-                            <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
-                                <FaLayerGroup className="text-secondary" /> Category
-                            </label>
                             {isAddingCategory ? (
-                                <div className="flex gap-2 animate-fade-in">
-                                    <input
-                                        type="text"
-                                        value={newCategoryName}
-                                        onChange={(e) => setNewCategoryName(e.target.value)}
-                                        placeholder="New Category Name"
-                                        className="flex-1 p-3 border-none bg-gray-50 rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
-                                        autoFocus
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleAddCategory}
-                                        className="bg-secondary text-white px-4 rounded-xl hover:bg-secondary/90 transition-colors shadow-md"
-                                    >
-                                        <FaSave />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsAddingCategory(false)}
-                                        className="bg-gray-100 text-text-secondary px-4 rounded-xl hover:bg-gray-200 transition-colors"
-                                    >
-                                        <FaTimes />
-                                    </button>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
+                                        <FaLayerGroup className="text-secondary" /> New Category
+                                    </label>
+                                    <div className="flex gap-2 animate-fade-in">
+                                        <input
+                                            type="text"
+                                            value={newCategoryName}
+                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            placeholder="New Category Name"
+                                            className="flex-1 p-3 border-none bg-gray-50 rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                                            autoFocus
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddCategory}
+                                            className="bg-secondary text-white px-4 rounded-xl hover:bg-secondary/90 transition-colors shadow-md"
+                                        >
+                                            <FaSave />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddingCategory(false)}
+                                            className="bg-gray-100 text-text-secondary px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                                        >
+                                            <FaTimes />
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="flex gap-2 items-center">
-                                    <div className="relative flex-1">
-                                        <select
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <CustomSelect
+                                            label={
+                                                <span className="flex items-center gap-2">
+                                                    <FaLayerGroup className="text-secondary" /> Category
+                                                </span>
+                                            }
                                             name="category"
                                             value={formData.category}
-                                            onChange={handleChange}
-                                            className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none appearance-none transition-all text-text-primary"
+                                            onChange={(e) => handleChange({ target: { name: 'category', value: e.target.value } })}
+                                            options={categoryOptions}
+                                            placeholder="Select Category"
                                             required
-                                        >
-                                            <option value="">Select Category</option>
-                                            {categories.map(cat => (
-                                                <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
-                                            ▼
-                                        </div>
+                                        />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setIsAddingCategory(true)}
-                                        className="bg-secondary/10 text-secondary px-4 py-3 rounded-xl hover:bg-secondary/20 transition-all flex items-center gap-2 text-sm font-bold whitespace-nowrap"
+                                        className="bg-secondary/10 text-secondary px-4 py-3 rounded-xl hover:bg-secondary/20 transition-all flex items-center gap-2 text-sm font-bold whitespace-nowrap mb-[2px] h-[46px]"
+                                        title="Add New Category"
                                     >
                                         <FaPlus /> <span className="hidden sm:inline">New</span>
                                     </button>
@@ -224,57 +231,58 @@ function AbhangFormContent() {
 
                         {/* Author (Sant) Field */}
                         <div className="space-y-3">
-                            <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
-                                <FaUser className="text-secondary" /> Sant / Author
-                            </label>
                             {isAddingSant ? (
-                                <div className="flex gap-2 animate-fade-in">
-                                    <input
-                                        type="text"
-                                        value={newSantName}
-                                        onChange={(e) => setNewSantName(e.target.value)}
-                                        placeholder="New Sant Name"
-                                        className="flex-1 p-3 border-none bg-gray-50 rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
-                                        autoFocus
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleAddSant}
-                                        className="bg-secondary text-white px-4 rounded-xl hover:bg-secondary/90 transition-colors shadow-md"
-                                    >
-                                        <FaSave />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsAddingSant(false)}
-                                        className="bg-gray-100 text-text-secondary px-4 rounded-xl hover:bg-gray-200 transition-colors"
-                                    >
-                                        <FaTimes />
-                                    </button>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 text-sm font-bold text-text-primary font-outfit">
+                                        <FaUser className="text-secondary" /> New Sant / Author
+                                    </label>
+                                    <div className="flex gap-2 animate-fade-in">
+                                        <input
+                                            type="text"
+                                            value={newSantName}
+                                            onChange={(e) => setNewSantName(e.target.value)}
+                                            placeholder="New Sant Name"
+                                            className="flex-1 p-3 border-none bg-gray-50 rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                                            autoFocus
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddSant}
+                                            className="bg-secondary text-white px-4 rounded-xl hover:bg-secondary/90 transition-colors shadow-md"
+                                        >
+                                            <FaSave />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddingSant(false)}
+                                            className="bg-gray-100 text-text-secondary px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                                        >
+                                            <FaTimes />
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="flex gap-2 items-center">
-                                    <div className="relative flex-1">
-                                        <select
+                                <div className="flex gap-2 items-end">
+                                    <div className="flex-1">
+                                        <CustomSelect
+                                            label={
+                                                <span className="flex items-center gap-2">
+                                                    <FaUser className="text-secondary" /> Sant / Author
+                                                </span>
+                                            }
                                             name="author"
                                             value={formData.author}
-                                            onChange={handleChange}
-                                            className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-secondary/20 outline-none appearance-none transition-all text-text-primary"
+                                            onChange={(e) => handleChange({ target: { name: 'author', value: e.target.value } })}
+                                            options={santOptions}
+                                            placeholder="Select Sant"
                                             required
-                                        >
-                                            <option value="">Select Sant</option>
-                                            {sants.map(sant => (
-                                                <option key={sant.id} value={sant.name}>{sant.name}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
-                                            ▼
-                                        </div>
+                                        />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setIsAddingSant(true)}
-                                        className="bg-secondary/10 text-secondary px-4 py-3 rounded-xl hover:bg-secondary/20 transition-all flex items-center gap-2 text-sm font-bold whitespace-nowrap"
+                                        className="bg-secondary/10 text-secondary px-4 py-3 rounded-xl hover:bg-secondary/20 transition-all flex items-center gap-2 text-sm font-bold whitespace-nowrap mb-[2px] h-[46px]"
+                                        title="Add New Sant"
                                     >
                                         <FaPlus /> <span className="hidden sm:inline">New</span>
                                     </button>
